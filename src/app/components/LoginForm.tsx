@@ -94,9 +94,9 @@ export function LoginForm() {
 
     try {
       const supabase = createClient();
-      const redirectUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/update-password`
-        : 'http://localhost:3000/update-password';
+      const redirectUrl =
+        import.meta.env.VITE_DEV_SUPABASE_REDIRECT_URL ||
+        window.location.origin;
 
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
         redirectTo: redirectUrl,
