@@ -30,12 +30,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const supabase = createClient()
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setIsLoading(false)
-    })
-
+    // IMPORTANT: register the listener FIRST, then call getSession().
+    // If getSession() runs first it consumes the recovery hash and the
+    // PASSWORD_RECOVERY event fires before the listener is attached — it's lost.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
@@ -44,6 +41,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'PASSWORD_RECOVERY') {
         setIsPasswordRecovery(true)
       }
+    })
+
+    // Fetch the initial session after the listener is ready
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setUser(session?.user ?? null)
+      setIsLoading(false)
     })
 
     return () => subscription.unsubscribe()
