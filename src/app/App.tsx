@@ -14,6 +14,7 @@ import { BlockedList } from './components/BlockedList';
 import { Settings } from './components/Settings';
 import { Documentation } from './components/Documentation';
 import { AccountProfile } from './components/AccountProfile';
+import { Plans } from './components/Plans';
 import { AppPageHeader } from './components/AppPageHeader';
 import { AuthProvider, useAuth } from '../lib/supabase/auth-context';
 import { createClient, isSupabaseConfigured } from '../lib/supabase/supabaseClient';
@@ -456,7 +457,9 @@ function AppContent() {
                       ? 'Documentación'
                       : activeSection === 'account'
                         ? 'Mi Cuenta'
-                        : 'Configuración'
+                        : activeSection === 'plans'
+                          ? 'Planes y Precios'
+                          : 'Configuración'
             }
             subtitle={
               activeSection === 'dashboard'
@@ -469,7 +472,9 @@ function AppContent() {
                       ? 'Aprende como funciona la plataforma'
                       : activeSection === 'account'
                         ? 'Gestiona tu perfil y contraseña'
-                        : 'Personaliza tu experiencia de seguridad'
+                        : activeSection === 'plans'
+                          ? 'Elige el plan que mejor se adapta a tus necesidades'
+                          : 'Personaliza tu experiencia de seguridad'
             }
           />
 
@@ -919,6 +924,10 @@ function AppContent() {
 
           {activeSection === 'account' && (
             <AccountProfile />
+          )}
+
+          {activeSection === 'plans' && (
+            <Plans />
           )}
         </div>
       </main>
