@@ -22,24 +22,28 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       figmaAssetResolver(),
-      // The React and Tailwind plugins are both required for Make, even if
-      // Tailwind is not being actively used – do not remove them
       react(),
       tailwindcss(),
     ],
     resolve: {
       alias: {
-        // Alias @ to the src directory
         '@': path.resolve(__dirname, './src'),
       },
     },
     define: {
       'import.meta.env.VITE_DEV_SUPABASE_REDIRECT_URL': JSON.stringify(
-        env.VITE_DEV_SUPABASE_REDIRECT_URL || env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || ''
+        env.VITE_DEV_SUPABASE_REDIRECT_URL ||
+        env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
+        (process.env.REPLIT_DEV_DOMAIN
+          ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+          : '')
       ),
     },
-
-    // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
     assetsInclude: ['**/*.svg', '**/*.csv'],
+    server: {
+      host: '0.0.0.0',
+      port: 5000,
+      allowedHosts: true,
+    },
   }
 })
