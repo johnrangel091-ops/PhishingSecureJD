@@ -6,6 +6,8 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   isLoading: boolean
+  isPasswordRecovery: boolean
+  clearPasswordRecovery: () => void
   signInWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>
   signUp: (email: string, password: string) => Promise<{ error: Error | null; needsConfirmation: boolean }>
   signInWithGoogle: () => Promise<{ error: Error | null }>
@@ -18,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
@@ -27,63 +30,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const supabase = createClient()
 
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
       setIsLoading(false)
     })
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       setIsLoading(false)
+
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true)
+      }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
+  const clearPasswordRecovery = () => setIsPasswordRecovery(false)
+
   const signInWithPassword = async (email: string, password: string) => {
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
     return { error: error as Error | null }
   }
 
   const signUp = async (email: string, password: string) => {
     const supabase = createClient()
-    const redirectUrl = import.meta.env.VITE_DEV_SUPABASE_REDIRECT_URL || 
+    const redirectUrl =
+      import.meta.env.VITE_DEV_SUPABASE_REDIRECT_URL ||
       import.meta.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
       `${window.location.origin}/auth/callback`
-    
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        emailRedirectTo: redirectUrl,
-      },
+      options: { emailRedirectTo: redirectUrl },
     })
-    
-    // Check if email confirmation is required
+
     const needsConfirmation = !error && data.user && !data.session
-    
     return { error: error as Error | null, needsConfirmation: !!needsConfirmation }
   }
 
   const signInWithGoogle = async () => {
     const supabase = createClient()
-    const redirectUrl = import.meta.env.VITE_DEV_SUPABASE_REDIRECT_URL || 
+    const redirectUrl =
+      import.meta.env.VITE_DEV_SUPABASE_REDIRECT_URL ||
       import.meta.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
       `${window.location.origin}/auth/callback`
-    
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-      },
+      options: { redirectTo: redirectUrl },
     })
     return { error: error as Error | null }
   }
@@ -94,15 +94,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      isLoading,
-      signInWithPassword,
-      signUp,
-      signInWithGoogle,
-      signOut,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        isLoading,
+        isPasswordRecovery,
+        clearPasswordRecovery,
+        signInWithPassword,
+        signUp,
+        signInWithGoogle,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

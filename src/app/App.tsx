@@ -13,6 +13,7 @@ import { SecurityTips } from './components/SecurityTips';
 import { BlockedList } from './components/BlockedList';
 import { Settings } from './components/Settings';
 import { Documentation } from './components/Documentation';
+import { AccountProfile } from './components/AccountProfile';
 import { AppPageHeader } from './components/AppPageHeader';
 import { AuthProvider, useAuth } from '../lib/supabase/auth-context';
 import { createClient, isSupabaseConfigured } from '../lib/supabase/supabaseClient';
@@ -120,7 +121,7 @@ function rowToAnalysisResult(item: HistorialRow): AnalysisResult {
 }
 
 function AppContent() {
-  const { user, isLoading: authLoading, signOut } = useAuth();
+  const { user, isLoading: authLoading, signOut, isPasswordRecovery, clearPasswordRecovery } = useAuth();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [url, setUrl] = useState('');
   const [isScanning, setIsScanning] = useState(false);
@@ -177,6 +178,14 @@ function AppContent() {
       setIsDarkMode(savedDarkMode === 'true');
     }
   }, []);
+
+  // Redirect to account section on password recovery link
+  useEffect(() => {
+    if (isPasswordRecovery) {
+      setActiveSection('account');
+      clearPasswordRecovery();
+    }
+  }, [isPasswordRecovery, clearPasswordRecovery]);
 
   const [analysisReasons, setAnalysisReasons] = useState<string[]>([]);
 
@@ -445,7 +454,9 @@ function AppContent() {
                     ? 'Base de Datos de Amenazas'
                     : activeSection === 'documentation'
                       ? 'Documentación'
-                      : 'Configuración'
+                      : activeSection === 'account'
+                        ? 'Mi Cuenta'
+                        : 'Configuración'
             }
             subtitle={
               activeSection === 'dashboard'
@@ -456,7 +467,9 @@ function AppContent() {
                     ? 'Explora amenazas conocidas y patrones de phishing'
                     : activeSection === 'documentation'
                       ? 'Aprende como funciona la plataforma'
-                      : 'Personaliza tu experiencia de seguridad'
+                      : activeSection === 'account'
+                        ? 'Gestiona tu perfil y contraseña'
+                        : 'Personaliza tu experiencia de seguridad'
             }
           />
 
@@ -902,6 +915,10 @@ function AppContent() {
               onClearHistory={handleClearHistory}
               onThemeChange={handleThemeChange}
             />
+          )}
+
+          {activeSection === 'account' && (
+            <AccountProfile />
           )}
         </div>
       </main>
