@@ -17,27 +17,12 @@ export interface DynamicAccessStatus {
   iconColorClasses: string;
 }
 
-/** Determina acceso permitido/bloqueado segun el motor de analisis heuristica. */
-export function isAnalysisAccessPermitted({ risk, estado, color }: AccessStatusInput): boolean {
-  if (estado === 'Seguro' || risk === 'Seguro' || risk === 'Bajo' || color === 'emerald') {
-    return true;
-  }
-  if (
-    estado === 'Sospechoso' ||
-    risk === 'Medio' ||
-    risk === 'Alto' ||
-    risk === 'Critico' ||
-    color === 'red' ||
-    color === 'yellow'
-  ) {
-    return false;
-  }
-  return false;
-}
-
+/**
+ * A link is "Permitido" unless the user has explicitly blocked it.
+ * The risk/estado level only affects the threat badge, not the access status.
+ */
 export function getDynamicAccessStatus(input: AccessStatusInput): DynamicAccessStatus {
-  const manualBlock = Boolean(input.bloqueado);
-  const permitted = !manualBlock && isAnalysisAccessPermitted(input);
+  const permitted = !Boolean(input.bloqueado);
 
   if (permitted) {
     return {
@@ -62,4 +47,9 @@ export function getDynamicAccessStatus(input: AccessStatusInput): DynamicAccessS
     textClasses: 'text-red-400',
     iconColorClasses: 'text-red-400',
   };
+}
+
+/** @deprecated Use getDynamicAccessStatus directly */
+export function isAnalysisAccessPermitted(input: AccessStatusInput): boolean {
+  return getDynamicAccessStatus(input).permitted;
 }
